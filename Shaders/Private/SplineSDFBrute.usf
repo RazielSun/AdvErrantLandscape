@@ -1,0 +1,153 @@
+#include "/Engine/Public/Platform.ush"
+
+struct FSplinePointInfo
+{
+	float3 Position;
+	float3 ArriveTangent;
+	float3 LeaveTangent;
+	int Type;
+};
+
+RWTexture2D<float> Out;
+StructuredBuffer<FSplinePointInfo> SplinePoints;
+
+float4 InActorXYInfo;
+float InSDFScale;
+int InSplinePointsCount;
+int InLoopSpline;
+int InFillInside;
+int Iterations;
+
+float2 InSDFRemap;
+
+int IsHeightmap;
+float InLandscapeLocationZ;
+
+float3 InLandscapeScale;
+
+float2 InTexelToUVBias;
+float2 InTexelToUVScale;
+
+float lerp(float a, float b, float t)
+{
+	float st = clamp(t, 0.0, 1.0);
+	return a * (1.0 - st) + b * st;
+}
+
+float4 get_closest_point_linear(float2 uv, float3 p0, float3 p1)
+{
+	const float3 Fwd = p1 - p0;
+	const float A = dot(uv - p0.xy, Fwd.xy);
+	const float B = dot(Fwd.xy, Fwd.xy);
+
+	const float V = clamp(A/B, 0.0, 1.0);
+	const float3 Point = p0 + V * Fwd;
+	
+	return float4(Point, V);
+}
+
+float3 cubic_interp(float3 p0, float3 t0, float3 p1, float3 t1, float a)
+{
+	float a2 = a * a;
+	float a3 = a2 * a;
+	return (((2.0*a3)-(3.0*a2)+1.0) * p0) + ((a3-(2.0*a2)+a) * t0) + ((a3-a2) * t1) + (((-2.0*a3)+(3.0*a2)) * p1);
+}
+
+float4 get_closest_point_cubic_naive(float2 uv, float3 p0, float3 t0, float3 p1, float3 t1)
+{
+	float3 found = p0;
+	float ft = 0.0;
+    
+	// bruteforce - naive method..
+	float Dist = 99999.0;
+	for (int i = 0; i < Iterations; i++)
+	{
+		const float a = float(i)/float(Iterations);
+		const float3 Point = cubic_interp(p0, t0, p1, t1, a);
+		const float NewDist = distance(uv, Point.xy);
+		if (NewDist < Dist)
+		{
+			ft = a;
+			Dist = NewDist;
+			found = Point;
+		}
+	}
+
+	return float4(found, ft);
+}
+
+float4 GetClosestElementToSegment(float2 Coord, int Index)
+{
+	const int NextIndex = (Index == InSplinePointsCount - 1) ? 0 : Index + 1;
+	float3 Fwd = float3(1.0, 0.0, 0.0);
+	float3 Point = SplinePoints[Index].Position;
+
+	float3 p0 = SplinePoints[Index].Position;
+	float3 p1 = SplinePoints[NextIndex].Position;
+	
+	if (SplinePoints[Index].Type == 0) // Linear
+	{
+		float4 Result = get_closest_point_linear(Coord, p0, p1);
+		Point = Result.xyz;
+
+		Fwd = p1 - p0;
+	}
+	else // Curve
+	{
+		float3 t0 = SplinePoints[Index].LeaveTangent;
+		float3 t1 = SplinePoints[NextIndex].ArriveTangent;
+		
+		float4 Result = get_closest_point_cubic_naive(Coord, p0, t0, p1, t1);
+		Point = Result.xyz;
+		
+		Fwd = cubic_interp(p0, t0, p1, t1, Result.w + 0.01) - Point;
+	}
+
+	float2 Dir = normalize(Coord - Point.xy);
+	float3 UP = float3(0.0, 0.0, 1.0);
+	float3 Tgn = cross(normalize(Fwd), UP);
+	float TgnDot = clamp(-dot(Tgn, float3(Dir.x, Dir.y, 0.0)), 0.0, 1.0);
+	
+	return float4(Point, TgnDot);
+}
+
+float4 GetClosestElement(float2 Coord)
+{
+	const int TotalSegments = (InLoopSpline == 1) ? InSplinePointsCount : InSplinePointsCount-1;
+	float4 Result = GetClosestElementToSegment(Coord, 0);
+	float MinDist2D = distance(Coord, Result.xy);
+	for (int Segment = 1; Segment < TotalSegments; Segment++)
+	{
+		const float4 Temp = GetClosestElementToSegment(Coord, Segment);
+		const float NewMinDist2D = distance(Coord, Temp.xy);
+		if (NewMinDist2D < MinDist2D)
+		{
+			Result = Temp;
+			MinDist2D = NewMinDist2D;
+		}
+	}
+	return Result;
+}
+
+[numthreads(NUM_THREADS_X, NUM_THREADS_Y, 1)]
+void Main(const uint3 DispatchId : SV_DispatchThreadID)
+{
+	// SDF
+	const uint2 Texel = DispatchId.xy;
+	const float2 UV = (float2(Texel) + InTexelToUVBias) * InTexelToUVScale;
+
+	float2 Coord = InActorXYInfo.xy + (UV - float2(0.5, 0.5)) * InActorXYInfo.zw;
+	float4 ClosestPoint = GetClosestElement(Coord);
+	float D = clamp(distance(Coord, ClosestPoint.xy) * InSDFScale, 0.0, 1.0);
+
+	int Blend = InLoopSpline * InFillInside;
+	float Value = lerp(1.0 - D, lerp((1.0 - D) * 0.5, 0.5 + D * 0.5, ClosestPoint.w), Blend);
+
+	// Remap
+	float MaskValue = smoothstep(InSDFRemap.x, InSDFRemap.y, Value);
+
+	const float NormZ = (ClosestPoint.z - InLandscapeLocationZ) / (InLandscapeScale.z * 255.0f);
+	float HeightScale = lerp(1.0f, clamp(NormZ, -1.0f, 1.0f), IsHeightmap);
+
+	Out[Texel] = MaskValue * HeightScale;
+}
