@@ -23,7 +23,7 @@ struct FBELandscapeSplineBrushParams
 	FVector2D SDFRemap = FVector2D(0.0, 0.5);
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Landscape Brush")
-	int32 CurveIterations = 50;
+	int32 CurveIterations = 100;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Landscape Brush")
 	bool bFillInside = true;
@@ -58,7 +58,7 @@ public:
 		const FName& InWeightmapName) override;
 
 	void SetSplineComponent(const TObjectPtr<UAELSplineComponent>& InSplineComponent);
-
+	
 	virtual bool AllowsPartialUpdate() const override;
 	virtual UElBrushPaintMask* GetBrushPaintMask() const override;
 	virtual TSet<FName> GetWeightmaps() const override;

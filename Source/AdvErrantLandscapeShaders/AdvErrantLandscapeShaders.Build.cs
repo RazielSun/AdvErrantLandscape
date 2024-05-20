@@ -29,6 +29,6 @@ public class AdvErrantLandscapeShaders : ModuleRules
         
         PrivateDependencyModuleNames.Add("AdvErrantLandscapeUtilities");
 			
-        AdvErrantLandscapeUtilities.AddErrantUtilitiesClientDefinitions(this, "Errant::Overrides");
+        AdvErrantLandscapeUtilities.AddErrantUtilitiesClientDefinitions(this, "Errant::Landscape");
     }
 }

@@ -15,6 +15,7 @@ public:
 	AAELBaseSplineBrushActor();
 
 	virtual void RegisterAllComponents() override;
+	virtual void PostLoad() override;
 
 protected:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Components")

@@ -52,7 +52,7 @@ public class AdvErrantLandscapeUtilities : ModuleRules
         PrivateDefinitions.AddRange(new string[] {
             "ERRANT_UTILITIES_EXPORT", GetDllExportImportFlag(Target),
             "ERRANT_UTILITIES_MODULE_NAME=AdvErrantLandscapeUtilities",
-            "ERRANT_UTILITIES_NAMESPACE=Errant::Overrides",
+            "ERRANT_UTILITIES_NAMESPACE=Errant::Landscape",
             "ERRANT_UTILITIES_MODULE_NAME_STR=\"AdvErrantLandscapeUtilities\"",
             "ERRANT_UTILITIES_PLUGIN_NAME_STR=\"AdvErrantLandscape\"",
         });

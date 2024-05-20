@@ -28,6 +28,6 @@ public class AdvErrantLandscape : ModuleRules
 			}
 			);
 		
-		AdvErrantLandscapeUtilities.AddErrantUtilitiesClientDefinitions(this, "Errant::Overrides");
+		AdvErrantLandscapeUtilities.AddErrantUtilitiesClientDefinitions(this, "Errant::Landscape");
 	}
 }

@@ -12,7 +12,7 @@ UE_POP_MACRO("ERRANT_UTILITIES_NAMESPACE")
 #include "GlobalShader.h"
 #include "ShaderParameterStruct.h"
 
-namespace Errant::Overrides
+namespace Errant::Landscape
 {
 	struct FSplinePointInfo
 	{
@@ -49,4 +49,4 @@ namespace Errant::Overrides
 		
 		END_SHADER_PARAMETER_STRUCT();
 	};
-}  // namespace Errant::Overrides
+}  // namespace Errant::Landscape

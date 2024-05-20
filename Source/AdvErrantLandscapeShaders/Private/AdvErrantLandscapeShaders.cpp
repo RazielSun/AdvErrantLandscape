@@ -7,7 +7,7 @@
 
 #if WITH_EDITOR
 
-namespace Errant::Overrides
+namespace Errant::Landscape
 {
 	class FAdvErrantLandscapeShadersModule final : public IModuleInterface
 	{
@@ -21,9 +21,9 @@ namespace Errant::Overrides
 			AddShaderSourceDirectoryMapping(TEXT("/Plugin/AdvErrantLandscape"), LandscapeShaderDir);
 		}
 	};
-}  // namespace Errant::Overrides
+}  // namespace Errant::Landscape
 
-IMPLEMENT_MODULE(Errant::Overrides::FAdvErrantLandscapeShadersModule, AdvErrantLandscapeShaders);
+IMPLEMENT_MODULE(Errant::Landscape::FAdvErrantLandscapeShadersModule, AdvErrantLandscapeShaders);
 #else  // WITH_EDITOR
 
 IMPLEMENT_MODULE(FDefaultModuleImpl, ErrantOverridesShaders);

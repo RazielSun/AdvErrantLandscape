@@ -30,3 +30,13 @@ void AAELBaseSplineBrushActor::RegisterAllComponents()
 		SplineBrushComponent->SetSplineComponent(SplineComponent);
 	}
 }
+
+void AAELBaseSplineBrushActor::PostLoad()
+{
+	Super::PostLoad();
+
+	if (SplineBrushComponent && SplineComponent)
+	{
+		SplineBrushComponent->SetSplineComponent(SplineComponent);
+	}
+}
