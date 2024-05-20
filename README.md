@@ -16,6 +16,5 @@ We got SDF map from spline with paramaters and apply it to Unreal Landscape.
 + ErrantLandscape Plugin 1.4.0
 
 ## Issues
-+ Cannot compile with EL Plugin 1.4.1 - link funcs errors
 + Spline SDF is brute force algorithm (need more optimized cubic spline get closest point)
 + It uses V0 (Depricated), because V1 uses some private function inside EL Plugin

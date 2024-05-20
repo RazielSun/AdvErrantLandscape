@@ -21,6 +21,7 @@ public class AdvErrantLandscape : ModuleRules
 			{
 				"CoreUObject",
 				"Engine",
+				"ErrantLandscapeUtilities",
 				"AdvErrantLandscapeUtilities",
 				"RHI",
 				"RenderCore",
