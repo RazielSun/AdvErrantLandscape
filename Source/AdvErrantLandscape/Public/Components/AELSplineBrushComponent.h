@@ -66,6 +66,12 @@ public:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void OnUpdateTransform(EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport) override;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape Brush")
+	FBELandscapeSplineBrushParams Heightmap;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape Brush")
+	TMap<FName, FBELandscapeSplineBrushParams> Weightmaps;
+
 protected:
 	
 	void Render_RenderThread(
@@ -76,21 +82,14 @@ protected:
 		const FBELandscapeSplineBrushParams& BrushParams,
 		const bool InIsHeightmap) const;
 
-private:
-	UPROPERTY(EditAnywhere, Category = "Landscape Brush")
-	FBELandscapeSplineBrushParams Heightmap;
-
-	UPROPERTY(EditAnywhere, Category = "Landscape Brush")
-	TMap<FName, FBELandscapeSplineBrushParams> Weightmaps;
-	
-	UPROPERTY(VisibleAnywhere, Category = "Landscape Brush", Instanced)
-	TObjectPtr<UElBrushPaintMask> Mask = nullptr;
-	
-	UPROPERTY(Transient)
-	TWeakObjectPtr<UAELSplineComponent> CurrentSplineComponent = nullptr;
-
 	UFUNCTION()
 	void OnSplineEdited();
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Landscape Brush", Instanced)
+	TObjectPtr<UElBrushPaintMask> Mask = nullptr;
+
+	UPROPERTY(Transient)
+	TWeakObjectPtr<UAELSplineComponent> CurrentSplineComponent = nullptr;
 
 	FDelegateHandle SplineEditedDelegate;
 };
