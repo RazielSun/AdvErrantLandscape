@@ -8,7 +8,7 @@
 AAELHillBrushActor::AAELHillBrushActor()
 {
 	SplineComponent->SetClosedLoop(true, false);
-	
+
 	TArray<FVector> Points;
 	const float Size = 25.0f * 128.f;
 	Points.Add(FVector(Size, 0, 0));

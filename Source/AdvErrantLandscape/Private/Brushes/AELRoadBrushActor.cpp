@@ -9,7 +9,7 @@
 AAELRoadBrushActor::AAELRoadBrushActor()
 {
 	SplineComponent->SetClosedLoop(false, false);
-	
+
 	TArray<FVector> Points;
 	const float Size = 30.0f * 128.f;
 	Points.Add(FVector(Size, Size, 0));

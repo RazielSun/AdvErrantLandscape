@@ -16,6 +16,6 @@ void UAELSplineComponent::PostEditChangeProperty(FPropertyChangedEvent& Property
 	{
 		OnSplineEdited.Broadcast();
 	}
-	
+
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }

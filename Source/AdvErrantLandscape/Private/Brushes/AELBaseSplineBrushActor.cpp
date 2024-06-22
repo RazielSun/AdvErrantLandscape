@@ -1,4 +1,3 @@
-
 #include "Brushes/AELBaseSplineBrushActor.h"
 
 #include "Components/AELSplineComponent.h"
@@ -7,12 +6,12 @@
 AAELBaseSplineBrushActor::AAELBaseSplineBrushActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
-	
+
 	SplineBrushComponent = CreateDefaultSubobject<UAELSplineBrushComponent>(TEXT("Spline Brush Component"));
 	SplineBrushComponent->Mobility = EComponentMobility::Static;
 	SetRootComponent(SplineBrushComponent);
 	SplineBrushComponent->SetWorldScale3D({128, 128, 1});
-	
+
 	SplineBrushComponent->BrushPriority = UINT_MAX;
 
 	SplineComponent = CreateDefaultSubobject<UAELSplineComponent>(TEXT("Spline Component"));

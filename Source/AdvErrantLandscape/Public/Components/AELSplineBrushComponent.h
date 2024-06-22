@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -24,7 +23,7 @@ struct FBELandscapeSplineBrushParams
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Landscape Brush")
 	int32 CurveIterations = 100;
-	
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Landscape Brush")
 	bool bFillInside = true;
 
@@ -46,10 +45,11 @@ public:
 	UAELSplineBrushComponent();
 
 	virtual void RenderHeightmap_RenderThread(
-			FRHICommandListImmediate& RHICmdList,
-			const FElLandscapeInfo& InLandscapeInfo,
-			FRHITexturePool& InOutPools,
-			const FRHITexViews& InOutCombinedResult) override;
+		FRHICommandListImmediate& RHICmdList,
+		const FElLandscapeInfo& InLandscapeInfo,
+		FRHITexturePool& InOutPools,
+		const FRHITexViews& InOutCombinedResult) override;
+
 	virtual void RenderWeightmap_RenderThread(
 		FRHICommandListImmediate& RHICmdList,
 		const FElLandscapeInfo& InLandscapeInfo,
@@ -58,7 +58,7 @@ public:
 		const FName& InWeightmapName) override;
 
 	void SetSplineComponent(const TObjectPtr<UAELSplineComponent>& InSplineComponent);
-	
+
 	virtual bool AllowsPartialUpdate() const override;
 	virtual UElBrushPaintMask* GetBrushPaintMask() const override;
 	virtual TSet<FName> GetWeightmaps() const override;
@@ -73,7 +73,6 @@ public:
 	TMap<FName, FBELandscapeSplineBrushParams> Weightmaps;
 
 protected:
-	
 	void Render_RenderThread(
 		FRHICommandListImmediate& RHICmdList,
 		const FElLandscapeInfo& InLandscapeInfo,

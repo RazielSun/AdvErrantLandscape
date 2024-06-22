@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -15,7 +14,7 @@ class UAELSplineComponent : public USplineComponent
 
 public:
 	UAELSplineComponent();
-	
+
 	// UObject interface
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;

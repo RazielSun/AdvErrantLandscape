@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -13,5 +12,5 @@ class ADVERRANTLANDSCAPE_API AAELHillBrushActor : public AAELBaseSplineBrushActo
 
 public:
 	AAELHillBrushActor();
-	
+
 };

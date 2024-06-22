@@ -4,14 +4,12 @@
 
 void FAdvErrantLandscapeUtilitiesModule::StartupModule()
 {
-    
 }
 
 void FAdvErrantLandscapeUtilitiesModule::ShutdownModule()
 {
-    
 }
 
 #undef LOCTEXT_NAMESPACE
-    
+
 IMPLEMENT_MODULE(FAdvErrantLandscapeUtilitiesModule, AdvErrantLandscapeUtilities)

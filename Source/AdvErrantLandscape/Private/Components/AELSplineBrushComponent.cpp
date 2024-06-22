@@ -43,7 +43,9 @@ void UAELSplineBrushComponent::SetSplineComponent(const TObjectPtr<UAELSplineCom
 	{
 		CurrentSplineComponent = InSplineComponent;
 		if (!SplineEditedDelegate.IsValid())
+		{
 			SplineEditedDelegate = CurrentSplineComponent->OnSplineEdited.AddUObject(this, &ThisClass::OnSplineEdited);
+		}
 	}
 }
 
@@ -62,7 +64,7 @@ void UAELSplineBrushComponent::PostEditChangeProperty(FPropertyChangedEvent& Pro
 	using namespace Errant::Landscape;
 
 	Super::PostEditChangeProperty(PropertyChangedEvent);
-	
+
 	const FName PropertyName = PropertyChangedEvent.GetPropertyName();
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(UAELSplineBrushComponent, Weightmaps))
@@ -104,15 +106,15 @@ void UAELSplineBrushComponent::Render_RenderThread(
 
 	const FTexture2DViewsRHIRef OutViews =
 		RHICreateTexture2DViews(RTSize.X, RTSize.Y, PF_R32_FLOAT, 1, 1, TexCreate_UAV | TexCreate_RenderTargetable, TEXT("OutTexture"));
-	
+
 	const FIntPoint CombinedResultOffset = GetLandscapeRTOffset(*LandscapeRTCopyInfo);
-	
+
 	{
 		/*
 		 * SDF SPLINE GEN
 		 */
 		RHICmdList.Transition({FRHITransitionInfo(OutViews->Texture, ERHIAccess::Unknown, ERHIAccess::UAVMask)});
-	
+
 		TArray<FSplinePointInfo> SplinePointsInfos;
 		const int32 TotalPoints = CurrentSplineComponent->GetNumberOfSplinePoints();
 		SplinePointsInfos.Reserve(TotalPoints);
@@ -124,7 +126,7 @@ void UAELSplineBrushComponent::Render_RenderThread(
 			const auto LeaveTangent = CurrentSplineComponent->GetLeaveTangentAtSplinePoint(Index, ESplineCoordinateSpace::World);
 			SplinePointsInfos.Add({FVector3f(PointTransform.GetLocation()), FVector3f(ArriveTangent), FVector3f(LeaveTangent), static_cast<int32>(PointType)});
 		}
-	
+
 		constexpr uint32 PointInfoSize = sizeof(FSplinePointInfo);
 		const FBufferViewsRHIRef SplinePointsViews = RHICreateBufferViews(
 			PointInfoSize,
@@ -132,11 +134,11 @@ void UAELSplineBrushComponent::Render_RenderThread(
 			EBufferUsageFlags::ShaderResource | EBufferUsageFlags::StructuredBuffer,
 			SplinePointsInfos.GetData(),
 			TEXT("Spline Points Info"));
-	
+
 		FLandscapeSplineSDFBruteShader::FParameters SDFParams;
 		SDFParams.Out = OutViews->UAV;;
 		SDFParams.SplinePoints = SplinePointsViews->SRV;
-	
+
 		SDFParams.InTexelToUVBias = FVector2f(FullRTOffset.X, FullRTOffset.Y);
 		SDFParams.InTexelToUVScale = FVector2f(1.F) / FVector2f(FullRTSize.X - 1, FullRTSize.Y - 1);
 		const FVector BrushScale = GetComponentScale() * 100.0f;
@@ -150,14 +152,14 @@ void UAELSplineBrushComponent::Render_RenderThread(
 		SDFParams.InLandscapeLocationZ = GetOwningLandscape() ? GetOwningLandscape()->GetActorLocation().Z : 0;;
 		SDFParams.InLandscapeScale = GetOwningLandscape() ? FVector3f(GetOwningLandscape()->GetActorScale()) : FVector3f(100);
 		SDFParams.IsHeightmap = (InIsHeightmap) ? 1 : 0;
-	
+
 		ShaderDispatch<FLandscapeSplineSDFBruteShader>(RHICmdList, SDFParams, RTSize.X, RTSize.Y);
-		
+
 		RHICmdList.Transition({FRHITransitionInfo(OutViews->Texture, ERHIAccess::UAVMask, ERHIAccess::SRVMask)});
 	}
-	
+
 	RHICmdList.Transition({FRHITransitionInfo(&InOutCombinedResult, ERHIAccess::UAVMask, ERHIAccess::UAVMask)});
-	
+
 	PRAGMA_DISABLE_DEPRECATION_WARNINGS
 	// ReSharper disable once CppDeprecatedEntity
 	BlendBrush(

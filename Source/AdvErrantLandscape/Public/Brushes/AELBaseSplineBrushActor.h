@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -20,7 +19,7 @@ public:
 protected:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Components")
 	TObjectPtr<class UAELSplineComponent> SplineComponent = nullptr;
-	
+
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Landscape Brush")
 	TObjectPtr<class UAELSplineBrushComponent> SplineBrushComponent = nullptr;
 };

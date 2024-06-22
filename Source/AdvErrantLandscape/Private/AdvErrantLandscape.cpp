@@ -1,5 +1,4 @@
-﻿
-#include "AdvErrantLandscape.h"
+﻿#include "AdvErrantLandscape.h"
 
 #define LOCTEXT_NAMESPACE "FAdvErrantLandscapeModule"
 
@@ -15,5 +14,5 @@ void FAdvErrantLandscapeModule::ShutdownModule()
 }
 
 #undef LOCTEXT_NAMESPACE
-	
+
 IMPLEMENT_MODULE(FAdvErrantLandscapeModule, AdvErrantLandscape)
