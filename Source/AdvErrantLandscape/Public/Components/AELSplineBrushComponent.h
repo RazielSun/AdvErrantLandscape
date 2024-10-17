@@ -22,7 +22,7 @@ struct FBELandscapeSplineBrushParams
 	FVector2D SDFRemap = FVector2D(0.0, 0.5);
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Landscape Brush")
-	int32 CurveIterations = 100;
+	int32 CurveIterations = 20;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Landscape Brush")
 	bool bFillInside = true;

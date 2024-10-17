@@ -1,0 +1,178 @@
+#include "/Engine/Public/Platform.ush"
+
+struct FSplinePointInfo
+{
+	float3 Position;
+	float3 ArriveTangent;
+	float3 LeaveTangent;
+	int Type;
+};
+
+RWTexture2D<float> Out;
+StructuredBuffer<FSplinePointInfo> SplinePoints;
+
+float4 InActorXYInfo;
+float InSDFScale;
+int InSplinePointsCount;
+int InLoopSpline;
+int InFillInside;
+int Iterations;
+
+float2 InSDFRemap;
+
+int IsHeightmap;
+float InLandscapeLocationZ;
+
+float3 InLandscapeScale;
+
+float2 InTexelToUVBias;
+float2 InTexelToUVScale;
+
+float lerp(float a, float b, float t)
+{
+	float st = clamp(t, 0.0, 1.0);
+	return a * (1.0 - st) + b * st;
+}
+
+float4 get_closest_point_linear(float2 uv, float3 p0, float3 p1)
+{
+	const float3 Fwd = p1 - p0;
+	const float A = dot(uv - p0.xy, Fwd.xy);
+	const float B = dot(Fwd.xy, Fwd.xy);
+
+	const float V = clamp(A / B, 0.0, 1.0);
+	const float3 Point = p0 + V * Fwd;
+
+	return float4(Point, V);
+}
+
+float3 CubicInterp(float3 P0, float3 T0, float3 P1, float3 T1, float A)
+{
+	float A2 = A * A;
+	float A3 = A2 * A;
+
+	return ((((2.0*A3)-(3.0*A2)+1.0) * P0) + ((A3-(2.0*A2)+A) * T0) + ((A3-A2) * T1) + (((-2.0*A3)+(3.0*A2)) * P1));
+}
+
+float3 CubicInterpDerivative(float3 P0, float3 T0, float3 P1,  float3 T1, float A)
+{
+	float3 a = 6.f*P0 + 3.f*T0 + 3.f*T1 - 6.f*P1;
+	float3 b = -6.f*P0 - 4.f*T0 - 2.f*T1 + 6.f*P1;
+	float3 c = T0;
+
+	float A2 = A * A;
+
+	return ((a * A2) + (b * A) + c);
+}
+
+float4 get_closest_point_newton(float2 uv, float3 p0, float3 t0, float3 p1, float3 t1)
+{
+	float ft = 0.5;
+	float tolerance = 1e-5;
+	// float learning_rate = 2.0;
+    
+	for (int i = 0; i < Iterations; i++)
+	{
+		float3 Deriv = CubicInterpDerivative(p0, t0, p1, t1, ft);
+		float DerivMagSq = dot(Deriv, Deriv);
+
+		if (abs(DerivMagSq) < tolerance) {
+			break;
+		}
+        
+		//grad
+		float3 Point = CubicInterp(p0, t0, p1, t1, ft);
+		float2 Delta = Point - float3(uv, 0);
+		
+		// float grad = 2.0 * dot(Delta, Deriv);
+		// float stepv = grad * learning_rate;
+		// ft = ft - stepv;
+		
+		float stepv = dot(Delta, Deriv) / DerivMagSq;
+		ft = ft - stepv;
+		
+		ft = clamp(ft, 0.0, 1.0);
+        
+		if (abs(stepv) < tolerance) {
+			break;
+		}
+	}
+    // Point, ft
+	return float4(CubicInterp(p0, t0, p1, t1, ft), ft);
+}
+
+float4 GetClosestElementToSegment(float2 Coord, int Index)
+{
+	const int NextIndex = (Index == InSplinePointsCount - 1) ? 0 : Index + 1;
+	float3 Fwd = float3(1.0, 0.0, 0.0);
+	float3 Point = SplinePoints[Index].Position;
+
+	float3 p0 = SplinePoints[Index].Position;
+	float3 p1 = SplinePoints[NextIndex].Position;
+
+	if (SplinePoints[Index].Type == 0) // Linear
+	{
+		float4 Result = get_closest_point_linear(Coord, p0, p1);
+		Point = Result.xyz;
+
+		Fwd = p1 - p0;
+	}
+	else // Curve
+	{
+		float3 t0 = SplinePoints[Index].LeaveTangent;
+		float3 t1 = SplinePoints[NextIndex].ArriveTangent;
+
+		float4 Result = get_closest_point_newton(Coord, p0, t0, p1, t1);
+		Point = Result.xyz;
+
+		Fwd = CubicInterp(p0, t0, p1, t1, Result.w + 0.0001) - Point;
+	}
+
+	float2 Dir = normalize(Coord - Point.xy);
+	float3 UP = float3(0.0, 0.0, 1.0);
+	float3 Tgn = cross(normalize(Fwd), UP);
+	float TgnDot = clamp(-dot(Tgn, float3(Dir.x, Dir.y, 0.0)), 0.0, 1.0);
+
+	return float4(Point, TgnDot);
+}
+
+float4 GetClosestElement(float2 Coord)
+{
+	const int TotalSegments = (InLoopSpline == 1) ? InSplinePointsCount : InSplinePointsCount - 1;
+	float4 Result = GetClosestElementToSegment(Coord, 0);
+	float MinDist2D = distance(Coord, Result.xy);
+	for (int Segment = 1; Segment < TotalSegments; Segment++)
+	{
+		const float4 Temp = GetClosestElementToSegment(Coord, Segment);
+		const float NewMinDist2D = distance(Coord, Temp.xy);
+		if (NewMinDist2D < MinDist2D)
+		{
+			Result = Temp;
+			MinDist2D = NewMinDist2D;
+		}
+	}
+	return Result;
+}
+
+[numthreads(NUM_THREADS_X, NUM_THREADS_Y, 1)]
+void Main(const uint3 DispatchId : SV_DispatchThreadID)
+{
+	// SDF
+	const uint2 Texel = DispatchId.xy;
+	const float2 UV = (float2(Texel) + InTexelToUVBias) * InTexelToUVScale;
+
+	float2 Coord = InActorXYInfo.xy + (UV - float2(0.5, 0.5)) * InActorXYInfo.zw;
+	float4 ClosestPoint = GetClosestElement(Coord);
+	float D = clamp(distance(Coord, ClosestPoint.xy) * InSDFScale, 0.0, 1.0);
+
+	int Blend = InLoopSpline * InFillInside;
+	float Value = lerp(1.0 - D, lerp((1.0 - D) * 0.5, 0.5 + D * 0.5, ClosestPoint.w), Blend);
+
+	// Remap
+	float MaskValue = smoothstep(InSDFRemap.x, InSDFRemap.y, Value);
+
+	const float NormZ = (ClosestPoint.z - InLandscapeLocationZ) / (InLandscapeScale.z * 255.0f);
+	float HeightScale = lerp(1.0f, clamp(NormZ, -1.0f, 1.0f), IsHeightmap);
+
+	Out[Texel] = MaskValue * HeightScale;
+}
